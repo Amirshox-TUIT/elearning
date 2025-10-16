@@ -1,0 +1,86 @@
+# ===================== #
+# Python
+# ===================== #
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Cython debug symbols
+cython_debug/
+
+# ===================== #
+# Django
+# ===================== #
+*.log
+*.pot
+*.pyc
+*.sqlite3
+db.sqlite3
+media/
+staticfiles/
+local_settings.py
+
+# ===================== #
+# Environments
+# ===================== #
+.env
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ===================== #
+# IDEs and Editors
+# ===================== #
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ===================== #
+# OS files
+# ===================== #
+.DS_Store
+Thumbs.db
+
+# ===================== #
+# Migrations (optional)
+# ===================== #
+# Uncomment if you don’t want migrations tracked
+# */migrations/
+# !*/migrations/__init__.py
+
+# ===================== #
+# PyCharm specific
+# ===================== #
+*.iml
+*.ipr
+*.iws
+
+# ===================== #
+# Backup / Cache files
+# ===================== #
+*.bak
+*.tmp
+.cache/
+pytest_cache/
+.coverage
+htmlcov/
+
+# ===================== #
+# Node (if using frontend)
+# ===================== #
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===================== #
+# Dist / Build
+# ===================== #
+build/
+dist/
+*.egg-info/
+.eggs/
