@@ -1,7 +1,8 @@
+from django.contrib.auth import get_user_model
 from django.db import models
-from django.contrib.auth.models import User
 from apps.course.models import Course, Lesson
 
+User = get_user_model()
 
 class Enrollment(models.Model):
     STATUS_CHOICES = [

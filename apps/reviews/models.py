@@ -1,7 +1,8 @@
+from django.contrib.auth import get_user_model
 from django.db import models
-from django.contrib.auth.models import User
 from apps.course.models import Course, Lesson
 
+User = get_user_model()
 
 class CourseReview(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='reviews')
