@@ -127,7 +127,7 @@ class PostImage(models.Model):
 
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)  # anonimga ruxsat berish uchun
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     content = models.TextField()
     parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
     is_public = models.BooleanField(default=True)
@@ -137,7 +137,7 @@ class Comment(models.Model):
         ordering = ['created_at']
 
     def __str__(self):
-        return f"Comment on {self.post.title} by {self.user or self.name or 'Anonymous'}"
+        return f"Comment on {self.post.title} by {self.user or 'Anonymous'}"
 
 
 class PostLike(models.Model):

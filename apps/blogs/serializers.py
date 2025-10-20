@@ -1,10 +1,8 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Model
-from django.template.context_processors import request
-from django.utils.text import slugify
 from rest_framework import serializers
+from rest_framework.relations import PrimaryKeyRelatedField
 
-from apps.blogs.models import AuthorProfile, Post, Category, Tag
+from apps.blogs.models import AuthorProfile, Post, Category, Tag, PostImage, Comment, PostLike
 
 User = get_user_model()
 
@@ -60,6 +58,7 @@ class InlineProfileSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     author = InlineProfileSerializer()
+    posts = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -89,6 +88,10 @@ class ProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Last name must be at least 3 characters')
         return value
 
+    def get_posts(self, user):
+        return Post.objects.filter(author=user)
+
+
     def update(self, instance, validated_data):
         author_data = validated_data.pop('author', None)
         for attr, value in validated_data.items():
@@ -116,13 +119,22 @@ class InlineTagsModelSerializer(serializers.ModelSerializer):
         fields = ('id', 'name',)
 
 
+class InlineImagesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostImage
+        fields = "__all__"
+
+
 class PostListCreateSerializer(serializers.ModelSerializer):
     tags = InlineTagsModelSerializer(many=True, read_only=True)
     category = InlineCategorySerializer(read_only=True)
     author = InlineProfileSerializer(read_only=True)
-
+    images = InlineImagesSerializer(many=True, read_only=True)
+    images_id = PrimaryKeyRelatedField(queryset=Post.objects.all(), write_only=True, many=True)
     category_id = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), write_only=True)
     tags_id = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, write_only=True)
+    likes_count = serializers.SerializerMethodField(read_only=True)
+    comments_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Post
@@ -156,12 +168,19 @@ class PostListCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Category is required.")
         return value
 
+    def get_likes_count(self, post):
+        return post.likes.count()
+
+    def get_comments_count(self, post):
+        return post.comments.count()
+
 
 class PostRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
     tags = InlineTagsModelSerializer(many=True, read_only=True)
     category = InlineCategorySerializer(read_only=True)
     author = InlineProfileSerializer(read_only=True)
-
+    likes_count = serializers.SerializerMethodField(read_only=True)
+    comments_count = serializers.SerializerMethodField(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all(), write_only=True)
     tags_id = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, write_only=True)
     class Meta:
@@ -194,6 +213,90 @@ class PostRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Category is required.")
         return value
+
+    def get_likes_count(self, post):
+        return post.likes.count()
+
+    def get_comments_count(self, post):
+        return post.comments.count()
+
+
+class InlineUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username',)
+
+
+class InlineCommentSerializer(serializers.ModelSerializer):
+    user = InlineUserSerializer(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'content', 'user')
+
+
+class CommentListCreateSerializer(serializers.ModelSerializer):
+    user = InlineUserSerializer(read_only=True)
+    parent = InlineCommentSerializer(read_only=True)
+    parent_id = PrimaryKeyRelatedField(queryset=Comment.objects.all(), write_only=True, allow_null=True, required=False)
+
+    class Meta:
+        model = Comment
+        exclude = ('is_public', )
+        extra_kwargs = {
+            'id': {'read_only': True},
+            'created_at': {'read_only': True},
+            'post': {'read_only': True},
+        }
+
+    def validate_content(self, value):
+        if len(value.strip()) < 5:
+            raise serializers.ValidationError("Content must contain at least 5 characters.")
+        return value
+
+    def validate_parent_id(self, parent):
+        if parent and not Comment.objects.filter(id=parent.id).exists():
+            raise serializers.ValidationError("Parent must be exists.")
+        return parent.id
+
+
+class CommentRetrieveUpdateDestroySerializer(serializers.ModelSerializer):
+    user = InlineUserSerializer(read_only=True)
+    parent = InlineCommentSerializer(read_only=True)
+    parent_id = PrimaryKeyRelatedField(queryset=Comment.objects.all(), write_only=True, allow_null=True, required=False)
+
+    class Meta:
+        model = Comment
+        exclude = ('is_public',)
+        extra_kwargs = {
+            'id': {'read_only': True},
+            'created_at': {'read_only': True},
+            'post': {'read_only': True},
+        }
+
+    def validate_content(self, value):
+        if len(value.strip()) < 5:
+            raise serializers.ValidationError("Content must contain at least 5 characters.")
+        return value
+
+    def validate_parent_id(self, parent):
+        if parent and not Comment.objects.filter(id=parent.id).exists():
+            raise serializers.ValidationError("Parent must be exists.")
+        return parent.id
+
+
+class LikeCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostLike
+        fields = '__all__'
+        extra_kwargs = {
+            'id': {'read_only': True},
+            'user': {'read_only': True},
+            'post': {'read_only': True},
+        }
+
+
+
 
 
 
